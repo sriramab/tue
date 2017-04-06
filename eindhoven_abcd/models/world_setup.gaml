@@ -1,6 +1,6 @@
 /**
 * Name: worldsetup
-* Author: skbhamidipati
+* Author: Srirama Bhamidipati
 * Description: Describe here the model and its experiments
 * Tags: Tag1, Tag2, TagN
 */
@@ -16,7 +16,7 @@ global {
 	
 	init{
 		create postcode from:eindhoven_postcodes;
-		write (#red).red;
+		
 	}
 }
 
