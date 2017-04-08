@@ -14,10 +14,15 @@ global
 	file eindhoven_postcodes <- file("../gis/correctedUTMexternal.shp");
 	file home_location <- csv_file("../data/hh_location.csv", ";");
 	file people_schedule <- csv_file("../data/schedule.csv", ";");
+	file road <- file("../gis/mainRoadsEindhoven.shp");
 	geometry shape <- envelope(eindhoven_postcodes);
+	graph the_graph;
 	int home_size <- 50;
 	init
 	{
+		create roads from: road;
+		//map<road,float> weights_map <- road as_map (each:: (each.destruction_coeff * each.shape.perimeter));
+		the_graph <- as_edge_graph(roads); //with_weights weights_map;
 		create postcode from: eindhoven_postcodes with: [dr_postcode::float(get("postcode"))];
 		create homes from: home_location header: true with: [id::int(read("Hhid")), pc::int(read("PPC"))]
 		{
@@ -117,6 +122,15 @@ species postcode
 
 }
 
+species roads
+{
+	aspect default
+	{
+		draw shape + 5 color: # black;
+	}
+
+}
+
 experiment worldsetup type: gui
 {
 	float seed <- 0.7714011133031439;
@@ -130,6 +144,7 @@ experiment worldsetup type: gui
 			species homes aspect: default;
 			species male aspect: default;
 			species female aspect: default;
+			species roads aspect: default;
 			graphics "onlyDisplay"
 			{
 				draw eindhoven_extent color: rgb(# tan, 0.1);
