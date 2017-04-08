@@ -15,11 +15,13 @@ global
 	file home_location <- csv_file("../data/hh_location.csv", ";");
 	file people_schedule <- csv_file("../data/schedule.csv", ";");
 	geometry shape <- envelope(eindhoven_postcodes);
+	int home_size <- 50;
 	init
 	{
 		create postcode from: eindhoven_postcodes with: [dr_postcode::float(get("postcode"))];
 		create homes from: home_location header: true with: [id::int(read("Hhid")), pc::int(read("PPC"))]
 		{
+			shape <- square(home_size);
 			write pc;
 			ask postcode
 			{
@@ -35,31 +37,55 @@ global
 		// put people in homes
 		loop i over: homes
 		{
-			create people number: 2
+			create male number: 1
 			{
 				location <- any_location_in(i);
-				mygender <- flip(0.50) ? 1 : 0;
 				myname <- i.id * 10 + mygender;
+				myhome <- i.id;
+				my_gender_color <- # blue;
 			}
 
+		}
+
+		loop i over: homes
+		{
+			create female number: 1
+			{
+				location <- any_location_in(i);
+				myname <- i.id * 10 + mygender;
+				myhome <- i.id;
+				my_gender_color <- # pink;
+			}
+
+			i.family_size <- length(agents_inside(i));
 		}
 
 	}
 
 }
 
-species people skills: [moving]
+species male skills: [moving]
 {
 	int myname;
-	int mygender;
+	int mygender <- 0;
+	int myhome;
+	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
 	aspect default
 	{
-		if mygender = 1
-		{
-			draw circle(20) color: # blue at: location - { 30, 0, 0 };
-		}
+		draw circle(10) color: my_gender_color;
+	}
 
-		draw circle(20) color: # pink at: location + { 30, 0, 0 };
+}
+
+species female skills: [moving]
+{
+	int myname;
+	int mygender <- 1;
+	int myhome;
+	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
+	aspect default
+	{
+		draw circle(10) color: my_gender_color;
 	}
 
 }
@@ -68,13 +94,14 @@ species homes
 {
 	int id; // household ID
 	int pc; //postcode
+	int family_size;
 	init
 	{
 	}
 
 	aspect default
 	{
-		draw square(200) color: # green;
+		draw square(home_size) color: # green;
 	}
 
 }
@@ -93,6 +120,7 @@ species postcode
 experiment worldsetup type: gui
 {
 	float seed <- 0.7714011133031439;
+	parameter "homeSize" var: home_size;
 	/** Insert here the definition of the input and output of the model */
 	output
 	{
@@ -100,7 +128,8 @@ experiment worldsetup type: gui
 		{
 			species postcode aspect: default;
 			species homes aspect: default;
-			species people aspect: default;
+			species male aspect: default;
+			species female aspect: default;
 			graphics "onlyDisplay"
 			{
 				draw eindhoven_extent color: rgb(# tan, 0.1);
