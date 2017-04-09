@@ -10,11 +10,13 @@ model worldsetup
 global
 {
 /** Insert the global definitions, variables and actions here */
+	float step <- 1 # mn;
 	file eindhoven_extent <- file("../gis/UTMoutlineEindhoven.shp");
 	file eindhoven_postcodes <- file("../gis/correctedUTMexternal.shp");
 	file home_location <- csv_file("../data/hh_location.csv", ";");
-	file people_schedule <- csv_file("../data/schedule.csv", ";");
 	file road <- file("../gis/mainRoadsEindhoven.shp");
+	file people_schedule <- csv_file("../data/schedule.csv", ",");
+	matrix agent_schedule <- matrix(people_schedule);
 	geometry shape <- envelope(eindhoven_postcodes);
 	graph the_graph;
 	int home_size <- 50;
@@ -27,7 +29,7 @@ global
 		create homes from: home_location header: true with: [id::int(read("Hhid")), pc::int(read("PPC"))]
 		{
 			shape <- square(home_size);
-			write pc;
+			//write pc;
 			ask postcode
 			{
 				if myself.pc = dr_postcode
@@ -65,6 +67,36 @@ global
 			i.family_size <- length(agents_inside(i));
 		}
 
+		ask male
+		{
+			loop k from: 1 to: agent_schedule.rows - 1
+			{
+				if myname = agent_schedule[0, k]
+				{
+					add int(agent_schedule[15, k]) to: my_starttime;
+					add int(agent_schedule[17, k]) to: my_endtime;
+					add int(agent_schedule[19, k]) to: my_postcode;
+				}
+
+			}
+
+		}
+
+		ask female
+		{
+			loop k from: 1 to: agent_schedule.rows - 1
+			{
+				if myname = agent_schedule[0, k]
+				{
+					add int(agent_schedule[15, k]) to: my_starttime;
+					add int(agent_schedule[17, k]) to: my_endtime;
+					add int(agent_schedule[19, k]) to: my_postcode;
+				}
+
+			}
+
+		}
+
 	}
 
 }
@@ -75,6 +107,10 @@ species male skills: [moving]
 	int mygender <- 0;
 	int myhome;
 	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
+	matrix my_schedule;
+	list<int> my_starttime;
+	list<int> my_endtime;
+	list<int> my_postcode;
 	aspect default
 	{
 		draw circle(10) color: my_gender_color;
@@ -88,6 +124,9 @@ species female skills: [moving]
 	int mygender <- 1;
 	int myhome;
 	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
+	list<int> my_starttime;
+	list<int> my_endtime;
+	list<int> my_postcode;
 	aspect default
 	{
 		draw circle(10) color: my_gender_color;
