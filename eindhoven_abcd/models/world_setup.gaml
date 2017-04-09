@@ -50,6 +50,7 @@ global
 				myname <- i.id * 10 + mygender;
 				myhome <- i.id;
 				my_gender_color <- # blue;
+				my_postcode <- i.pc;
 			}
 
 		}
@@ -62,6 +63,7 @@ global
 				myname <- i.id * 10 + mygender;
 				myhome <- i.id;
 				my_gender_color <- # pink;
+				my_postcode <- i.pc;
 			}
 
 			i.family_size <- length(agents_inside(i));
@@ -73,9 +75,9 @@ global
 			{
 				if myname = agent_schedule[0, k]
 				{
-					add int(agent_schedule[15, k]) to: my_starttime;
-					add int(agent_schedule[17, k]) to: my_endtime;
-					add int(agent_schedule[19, k]) to: my_postcode;
+					add int(agent_schedule[15, k]) to: activity_starttime;
+					add int(agent_schedule[17, k]) to: activity_endtime;
+					add int(agent_schedule[19, k]) to: activity_postcode;
 				}
 
 			}
@@ -88,15 +90,21 @@ global
 			{
 				if myname = agent_schedule[0, k]
 				{
-					add int(agent_schedule[15, k]) to: my_starttime;
-					add int(agent_schedule[17, k]) to: my_endtime;
-					add int(agent_schedule[19, k]) to: my_postcode;
+					add int(agent_schedule[15, k]) to: activity_starttime;
+					add int(agent_schedule[17, k]) to: activity_endtime;
+					add int(agent_schedule[19, k]) to: activity_postcode;
 				}
 
 			}
 
 		}
 
+	}
+
+	reflex simulation_stop_time when: cycle = 1740
+	{
+		write "time is now " + time;
+		do pause;
 	}
 
 }
@@ -106,14 +114,36 @@ species male skills: [moving]
 	int myname;
 	int mygender <- 0;
 	int myhome;
+	int my_postcode;
 	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
 	matrix my_schedule;
-	list<int> my_starttime;
-	list<int> my_endtime;
-	list<int> my_postcode;
+	list<int> activity_starttime;
+	list<int> activity_endtime;
+	list<int> activity_postcode;
+	postcode h;
+	reflex male_moving
+	{
+		if activity_endtime contains cycle
+		{
+			int go_here <- activity_postcode[activity_endtime index_of cycle];
+			h <- one_of(postcode where (each.dr_postcode = go_here));
+			write "i am " + name + " i will go to " + go_here;
+			if h = nil
+			{
+				h <- postcode[1];
+			}
+
+			write h;
+			//postcode go_postcode <- 
+
+		}
+
+		do goto target: h on: the_graph speed: 50 # km / # h;
+	}
+
 	aspect default
 	{
-		draw circle(10) color: my_gender_color;
+		draw circle(100) color: my_gender_color;
 	}
 
 }
@@ -123,13 +153,35 @@ species female skills: [moving]
 	int myname;
 	int mygender <- 1;
 	int myhome;
+	int my_postcode;
 	rgb my_gender_color; // <- (mygender = 0) ? # blue : # red;
-	list<int> my_starttime;
-	list<int> my_endtime;
-	list<int> my_postcode;
+	list<int> activity_starttime;
+	list<int> activity_endtime;
+	list<int> activity_postcode;
+	postcode h;
+	reflex male_moving
+	{
+		if activity_endtime contains cycle
+		{
+			int go_here <- activity_postcode[activity_endtime index_of cycle];
+			h <- one_of(postcode where (each.dr_postcode = go_here));
+			write "i am " + name + " i will go to " + go_here;
+			if h = nil
+			{
+				h <- postcode[1];
+			}
+
+			write h;
+			//postcode go_postcode <- 
+
+		}
+
+		do goto target: h on: the_graph speed: 50 # km / # h;
+	}
+
 	aspect default
 	{
-		draw circle(10) color: my_gender_color;
+		draw circle(100) color: my_gender_color;
 	}
 
 }
@@ -170,7 +222,7 @@ species roads
 
 }
 
-experiment worldsetup type: gui
+experiment eindhoven type: gui
 {
 	float seed <- 0.7714011133031439;
 	parameter "homeSize" var: home_size;
@@ -181,12 +233,13 @@ experiment worldsetup type: gui
 		{
 			species postcode aspect: default;
 			species homes aspect: default;
-			species male aspect: default;
 			species female aspect: default;
+			species male aspect: default trace: 100;
 			species roads aspect: default;
 			graphics "onlyDisplay"
 			{
 				draw eindhoven_extent color: rgb(# tan, 0.1);
+				//draw time font: font("Helvetica", 64, # plain) color: # black;
 			}
 
 		}
