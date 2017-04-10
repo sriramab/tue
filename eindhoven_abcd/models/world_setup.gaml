@@ -10,7 +10,7 @@ model worldsetup
 global
 {
 /** Insert the global definitions, variables and actions here */
-	float step <- 1 # mn;
+	float step <- 1 # minute;
 	file eindhoven_extent <- file("../gis/UTMoutlineEindhoven.shp");
 	file eindhoven_postcodes <- file("../gis/correctedUTMexternal.shp");
 	file home_location <- csv_file("../data/hh_location.csv", ";");
@@ -20,6 +20,8 @@ global
 	geometry shape <- envelope(eindhoven_postcodes);
 	graph the_graph;
 	int home_size <- 50;
+	
+	
 	init
 	{
 		create roads from: road;
@@ -121,6 +123,7 @@ species male skills: [moving]
 	list<int> activity_endtime;
 	list<int> activity_postcode;
 	postcode h;
+	
 	reflex male_moving
 	{
 		if activity_endtime contains cycle
@@ -138,7 +141,7 @@ species male skills: [moving]
 
 		}
 
-		do goto target: h on: the_graph speed: 50 # km / # h;
+		do goto target: h on: the_graph speed: 1 # km / # minute;
 	}
 
 	aspect default
@@ -165,7 +168,7 @@ species female skills: [moving]
 		{
 			int go_here <- activity_postcode[activity_endtime index_of cycle];
 			h <- one_of(postcode where (each.dr_postcode = go_here));
-			write "i am " + name + " i will go to " + go_here;
+			//write "i am " + name + " i will go to " + go_here;
 			if h = nil
 			{
 				h <- postcode[1];
@@ -205,9 +208,15 @@ species homes
 species postcode
 {
 	int dr_postcode;
+	rgb postcode_color ;
+	
+	reflex coloration{
+		 postcode_color <- rgb((int(length(male inside self))+int(length(male inside self)))*10,100,180);
+		 write postcode_color.red;
+	}
 	aspect default
 	{
-		draw shape color: # red empty: true;
+		draw shape color: postcode_color depth:int(length(male inside self)*10);//empty: true;
 		draw string(dr_postcode) color: # black perspective: false;
 	}
 
@@ -231,11 +240,13 @@ experiment eindhoven type: gui
 	{
 		display main_frame type: opengl
 		{
-			species postcode aspect: default;
-			species homes aspect: default;
+			
+			//species homes aspect: default;
 			species female aspect: default;
 			species male aspect: default trace: 100;
 			species roads aspect: default;
+			species homes aspect: default;
+			species postcode aspect: default;
 			graphics "onlyDisplay"
 			{
 				draw eindhoven_extent color: rgb(# tan, 0.1);
