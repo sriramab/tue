@@ -10,8 +10,11 @@ model worldsetup
 global
 {
 /** Insert the global definitions, variables and actions here */
+	date starting_date <- date([2017,4,2,0,0,0]);
+	
 	float step <- 1 # minute;
 	file eindhoven_extent <- file("../gis/UTMoutlineEindhoven.shp");
+	file selected_buildings <- file("../gis/selBuildings.shp");
 	file eindhoven_postcodes <- file("../gis/correctedUTMexternal.shp");
 	file home_location <- csv_file("../data/hh_location.csv", ";");
 	file road <- file("../gis/mainRoadsEindhoven.shp");
@@ -103,10 +106,27 @@ global
 
 	}
 
-	reflex simulation_stop_time when: cycle = 1740
+	reflex simulation_stop_time when: cycle = 1720
 	{
 		write "time is now " + time;
 		do pause;
+	}
+
+}
+
+species roads
+{
+	int nb_people_on_road;
+	aspect default
+	{
+		draw shape + 5  color: # black;
+	}
+	aspect traffic_flow
+	{
+		
+		draw shape+5 color:#green;
+		
+		
 	}
 
 }
@@ -123,6 +143,7 @@ species male skills: [moving]
 	list<int> activity_endtime;
 	list<int> activity_postcode;
 	postcode h;
+	int current_postcode;
 	
 	reflex male_moving
 	{
@@ -133,7 +154,7 @@ species male skills: [moving]
 			write "i am " + name + " i will go to " + go_here;
 			if h = nil
 			{
-				h <- postcode[1];
+				h <- one_of(postcode);
 			}
 
 			write h;
@@ -141,12 +162,14 @@ species male skills: [moving]
 
 		}
 
-		do goto target: h on: the_graph speed: 1 # km / # minute;
+		do goto target: h on: the_graph speed: 10 #km/ #h;
+		
+		//current_postcode <- (one_of(postcode overlapping self).dr_postcode=my_postcode)?1:0;
 	}
 
 	aspect default
 	{
-		draw circle(100) color: my_gender_color;
+		draw circle(50) color: #blue;
 	}
 
 }
@@ -161,6 +184,7 @@ species female skills: [moving]
 	list<int> activity_starttime;
 	list<int> activity_endtime;
 	list<int> activity_postcode;
+	int current_postcode;
 	postcode h;
 	reflex male_moving
 	{
@@ -171,7 +195,7 @@ species female skills: [moving]
 			//write "i am " + name + " i will go to " + go_here;
 			if h = nil
 			{
-				h <- postcode[1];
+				h <- one_of(postcode);
 			}
 
 			write h;
@@ -179,12 +203,15 @@ species female skills: [moving]
 
 		}
 
-		do goto target: h on: the_graph speed: 50 # km / # h;
+		do goto target: h on: the_graph speed: 10 #km/#h;
+		//current_postcode <- (one_of(postcode overlapping self).dr_postcode=my_postcode)?1:0;
+		//current_postcode<-int(one_of(postcode) overlaps self);
+		//write current_postcode;
 	}
 
 	aspect default
 	{
-		draw circle(100) color: my_gender_color;
+		draw circle(50) color: #red;
 	}
 
 }
@@ -208,49 +235,65 @@ species homes
 species postcode
 {
 	int dr_postcode;
-	rgb postcode_color ;
+	rgb postcode_color ;//<-rgb(255,255,255,0.1);
 	
-	reflex coloration{
+	reflex coloration when:every(60.0){
 		 postcode_color <- rgb((int(length(male inside self))+int(length(male inside self)))*10,100,180);
-		 write postcode_color.red;
+		 //write postcode_color.red;
 	}
 	aspect default
 	{
-		draw shape color: postcode_color depth:int(length(male inside self)*10);//empty: true;
+		draw shape color: postcode_color depth:int(length(male inside self)*10);//
 		draw string(dr_postcode) color: # black perspective: false;
 	}
-
-}
-
-species roads
-{
-	aspect default
+	aspect FlowHeight
 	{
-		draw shape + 5 color: # black;
+		draw shape color: postcode_color ;//empty:true depth:int(length(male inside self)*10);//
+		
 	}
 
 }
+
+
 
 experiment eindhoven type: gui
 {
 	float seed <- 0.7714011133031439;
-	parameter "homeSize" var: home_size;
+	float minimum_cycle_duration<-0.2;
+	
 	/** Insert here the definition of the input and output of the model */
 	output
 	{
 		display main_frame type: opengl
 		{
 			
-			//species homes aspect: default;
+			
+			species postcode aspect: default;
+			//species postcode aspect: FlowHeight;
 			species female aspect: default;
-			species male aspect: default trace: 100;
+			species male aspect: default ;//trace: 100;
 			species roads aspect: default;
 			species homes aspect: default;
-			species postcode aspect: default;
+			species roads aspect: traffic_flow;
+			
 			graphics "onlyDisplay"
 			{
-				draw eindhoven_extent color: rgb(# tan, 0.1);
+				draw selected_buildings color: rgb(# tan, 1.0) depth:rnd(40);
 				//draw time font: font("Helvetica", 64, # plain) color: # black;
+				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
+			}
+
+		}
+		
+		display "datalist_pie_chart" type: java2D
+		{
+			chart "datalist_pie_chart" type: pie style: exploded
+			{
+				datalist legend: ["At Home", "Not Home"] 
+				value: [sum(male collect (each.current_postcode)),sum(female collect (each.current_postcode))] 
+				
+				//					categoriesnames:["C1","C2","C3"]
+				color: [ # blue, # red];
 			}
 
 		}
