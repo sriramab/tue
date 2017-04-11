@@ -116,15 +116,15 @@ global
 
 species roads
 {
-	int nb_people_on_road;
+	int people_counts;
 	aspect default
 	{
-		draw shape + 5  color: # black;
+		draw shape + 5 + people_counts/10 color: # green;
 	}
 	aspect traffic_flow
 	{
 		
-		draw shape+5 color:#green;
+		draw shape+5+people_counts/10 color:#green;
 		
 		
 	}
@@ -186,7 +186,7 @@ species female skills: [moving]
 	list<int> activity_postcode;
 	int current_postcode;
 	postcode h;
-	reflex male_moving
+	reflex female_moving
 	{
 		if activity_endtime contains cycle
 		{
@@ -203,7 +203,16 @@ species female skills: [moving]
 
 		}
 
-		do goto target: h on: the_graph speed: 10 #km/#h;
+		path path_followed <- self goto [target::h, on::the_graph, return_path:: true, speed::10 #km/#h];
+		list<geometry> segments <- path_followed.segments;
+		
+		loop line over: segments {
+			roads the_road <- roads(path_followed agent_from_geometry line);
+                    ask the_road {
+               						people_counts  <- people_counts + 1;
+            }
+		}
+		//do goto target: h on: the_graph speed: 10 #km/#h;
 		//current_postcode <- (one_of(postcode overlapping self).dr_postcode=my_postcode)?1:0;
 		//current_postcode<-int(one_of(postcode) overlaps self);
 		//write current_postcode;
@@ -292,7 +301,7 @@ experiment eindhoven type: gui
 				datalist legend: ["At Home", "Not Home"] 
 				value: [sum(male collect (each.current_postcode)),sum(female collect (each.current_postcode))] 
 				
-				//					categoriesnames:["C1","C2","C3"]
+				
 				color: [ # blue, # red];
 			}
 
