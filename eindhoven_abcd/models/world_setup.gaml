@@ -16,7 +16,8 @@ global
 	file eindhoven_extent <- file("../gis/UTMoutlineEindhoven.shp");
 	file selected_buildings <- file("../gis/selBuildings.shp");
 	file eindhoven_postcodes <- file("../gis/correctedUTMexternal.shp");
-	file home_location <- csv_file("../data/hh_location.csv", ";");
+	file home_location <- csv_file("../data/onlyEindhoven.csv", ",");
+	//file home_location <- csv_file("../data/hh_location.csv", ";");
 	file road <- file("../gis/mainRoadsEindhoven.shp");
 	file people_schedule <- csv_file("../data/schedule.csv", ",");
 	matrix agent_schedule <- matrix(people_schedule);
@@ -27,6 +28,7 @@ global
 	
 	init
 	{
+		create buildings from:selected_buildings;
 		create roads from: road;
 		//map<road,float> weights_map <- road as_map (each:: (each.destruction_coeff * each.shape.perimeter));
 		the_graph <- as_edge_graph(roads); //with_weights weights_map;
@@ -114,17 +116,23 @@ global
 
 }
 
+species buildings{
+	aspect default{
+		draw shape color: rgb(#tan) depth:rnd(self.shape.area/1000);
+	}
+}
+
 species roads
 {
 	int people_counts;
 	aspect default
 	{
-		draw shape + 5 + people_counts/10 color: # green;
+		draw shape + 5 + people_counts color: # green;
 	}
 	aspect traffic_flow
 	{
 		
-		draw shape+5+people_counts/10 color:#green;
+		draw shape+5+people_counts color:#green;
 		
 		
 	}
@@ -207,6 +215,7 @@ species female skills: [moving]
 		list<geometry> segments <- path_followed.segments;
 		
 		loop line over: segments {
+			float dist <- line.perimeter;
 			roads the_road <- roads(path_followed agent_from_geometry line);
                     ask the_road {
                						people_counts  <- people_counts + 1;
@@ -216,6 +225,13 @@ species female skills: [moving]
 		//current_postcode <- (one_of(postcode overlapping self).dr_postcode=my_postcode)?1:0;
 		//current_postcode<-int(one_of(postcode) overlaps self);
 		//write current_postcode;
+		/*
+		 * float dist <- line.perimeter;
+				road rd <- road(path_followed agent_from_geometry line); 
+				rd.nb_people_on_road <- rd.nb_people_on_road +dist / rd.shape.perimeter;
+		 */
+		
+		
 	}
 
 	aspect default
@@ -246,18 +262,28 @@ species postcode
 	int dr_postcode;
 	rgb postcode_color ;//<-rgb(255,255,255,0.1);
 	
-	reflex coloration when:every(60.0){
+	reflex coloration when:every(30.0){
 		 postcode_color <- rgb((int(length(male inside self))+int(length(male inside self)))*10,100,180);
 		 //write postcode_color.red;
 	}
 	aspect default
 	{
-		draw shape color: postcode_color depth:int(length(male inside self)*10);//
-		draw string(dr_postcode) color: # black perspective: false;
+		rgb c<-#gray;
+		draw shape color: rgb(c.red,c.green,c.blue,0.4) empty:true ;//
+		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 16 , #plain);
+		
 	}
 	aspect FlowHeight
 	{
-		draw shape color: postcode_color ;//empty:true depth:int(length(male inside self)*10);//
+		if cycle>30{
+			
+		draw shape color: postcode_color  depth:(length(male inside self)*10);//
+		}
+		else{
+			rgb c<-#gray;
+			draw shape color: rgb(c.red,c.green,c.blue,0.4) empty:true ;//
+		}
+		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 16 , #plain);
 		
 	}
 
@@ -273,26 +299,6 @@ experiment eindhoven type: gui
 	/** Insert here the definition of the input and output of the model */
 	output
 	{
-		display main_frame type: opengl
-		{
-			
-			
-			species postcode aspect: default;
-			//species postcode aspect: FlowHeight;
-			species female aspect: default;
-			species male aspect: default ;//trace: 100;
-			species roads aspect: default;
-			species homes aspect: default;
-			species roads aspect: traffic_flow;
-			
-			graphics "onlyDisplay"
-			{
-				draw selected_buildings color: rgb(# tan, 1.0) depth:rnd(40);
-				//draw time font: font("Helvetica", 64, # plain) color: # black;
-				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
-			}
-
-		}
 		
 		display "datalist_pie_chart" type: java2D
 		{
@@ -306,6 +312,48 @@ experiment eindhoven type: gui
 			}
 
 		}
+		display main_frame type: opengl
+		{
+			
+			
+			species postcode aspect: default ;
+			species buildings aspect:default;
+			//species postcode aspect: FlowHeight;
+			species female aspect: default;
+			species male aspect: default ;//trace: 100;
+			species roads aspect: default;
+			species roads aspect: traffic_flow;
+			species homes aspect: default;
+			
+			
+			graphics "onlyDisplay"
+			{
+				//draw selected_buildings color: rgb(# tan, 1.0);// depth:rnd(40);
+				//draw time font: font("Helvetica", 64, # plain) color: # black;
+				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
+			}
+
+		}
+		
+		display landuse_transport type: opengl
+		{
+			
+			
+			//species postcode aspect: default transparency:0.3;
+			species postcode aspect: FlowHeight;
+			
+			
+			
+			graphics "onlyDisplay"
+			{
+				//draw selected_buildings color: rgb(# tan, 1.0) depth:rnd(40);
+				//draw time font: font("Helvetica", 64, # plain) color: # black;
+				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
+			}
+
+		}
+		
+		
 
 	}
 
