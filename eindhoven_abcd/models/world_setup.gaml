@@ -10,7 +10,7 @@ model worldsetup
 global
 {
 /** Insert the global definitions, variables and actions here */
-	date starting_date <- date([2017,4,2,0,0,0]);
+	date starting_date <- date([2017,4,12,0,0,0]);
 	
 	float step <- 1 # minute;
 	file eindhoven_extent <- file("../gis/UTMoutlineEindhoven.shp");
@@ -270,7 +270,7 @@ species postcode
 	{
 		rgb c<-#gray;
 		draw shape color: rgb(c.red,c.green,c.blue,0.4) empty:true ;//
-		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 16 , #plain);
+		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 10 , #plain);
 		
 	}
 	aspect FlowHeight
@@ -283,7 +283,7 @@ species postcode
 			rgb c<-#gray;
 			draw shape color: rgb(c.red,c.green,c.blue,0.4) empty:true ;//
 		}
-		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 16 , #plain);
+		draw string(dr_postcode) color: # black perspective: false font:font("Helvetica", 10 , #plain);
 		
 	}
 
@@ -300,24 +300,24 @@ experiment eindhoven type: gui
 	output
 	{
 		
-		display "datalist_pie_chart" type: java2D
-		{
-			chart "datalist_pie_chart" type: pie style: exploded
-			{
-				datalist legend: ["At Home", "Not Home"] 
-				value: [sum(male collect (each.current_postcode)),sum(female collect (each.current_postcode))] 
-				
-				
-				color: [ # blue, # red];
-			}
-
-		}
+//		display "datalist_pie_chart" type: java2D
+//		{
+//			chart "datalist_pie_chart" type: pie style: exploded
+//			{
+//				datalist legend: ["At Home", "Not Home"] 
+//				value: [sum(male collect (each.current_postcode)),sum(female collect (each.current_postcode))] 
+//				
+//				
+//				color: [ # blue, # red];
+//			}
+//
+//		}
 		display main_frame type: opengl
 		{
 			
 			
 			species postcode aspect: default ;
-			species buildings aspect:default;
+			species buildings aspect:default refresh:false;
 			//species postcode aspect: FlowHeight;
 			species female aspect: default;
 			species male aspect: default ;//trace: 100;
@@ -330,7 +330,7 @@ experiment eindhoven type: gui
 			{
 				//draw selected_buildings color: rgb(# tan, 1.0);// depth:rnd(40);
 				//draw time font: font("Helvetica", 64, # plain) color: # black;
-				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
+				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width/2, 0} perspective: false;
 			}
 
 		}
@@ -341,6 +341,7 @@ experiment eindhoven type: gui
 			
 			//species postcode aspect: default transparency:0.3;
 			species postcode aspect: FlowHeight;
+			species postcode aspect: default;
 			
 			
 			
@@ -348,7 +349,7 @@ experiment eindhoven type: gui
 			{
 				//draw selected_buildings color: rgb(# tan, 1.0) depth:rnd(40);
 				//draw time font: font("Helvetica", 64, # plain) color: # black;
-				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width, world.shape.height} perspective: false;
+				draw  string(current_date, "%Y %N %D %h %m %s")  color:°black font:font("Helvetica", 24 , #plain) at: {world.shape.width/2, 0} perspective: false;
 			}
 
 		}
